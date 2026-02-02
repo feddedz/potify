@@ -1,1 +1,8 @@
-
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title>Potify Video Podcast</title>
+    <link>https://feddedz.github.io/potify/</link>
+    <description>Automated Video Podcast</description>
+    </channel>
+</rss>
