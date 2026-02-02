@@ -8,44 +8,39 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      releases: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Install yt-dlp
         run: sudo apt-get update && sudo apt-get install -y yt-dlp
 
-      - name: Download & Upload
+      - name: Download and Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          # 1. Get keyword from commit
           KW=$(git log -1 --pretty=%B | grep -oP 'keyword:\s*\K.+' || echo "")
-          if [ -z "$KW" ]; then echo "No keyword found in commit message"; exit 0; fi
+          if [ -z "$KW" ]; then echo "No keyword found"; exit 0; fi
 
-          # 2. Search and get info
           yt-dlp "ytsearch1:$KW" --get-title --get-id > meta.txt
           TITLE=$(sed -n '1p' meta.txt)
           YT_ID=$(sed -n '2p' meta.txt)
           FILE_NAME="${YT_ID}.mp4"
 
-          # 3. Download the video (720p)
           yt-dlp "https://www.youtube.com/watch?v=$YT_ID" -f "mp4[height<=720]" -o "$FILE_NAME"
 
-          # 4. Create/Update Release
-          gh release create "v1" --title "Podcast Episodes" --notes "Video Storage" || echo "Release v1 already exists"
+          gh release create "v1" --title "Podcast Episodes" --notes "Video Storage" || echo "Release exists"
           gh release upload "v1" "$FILE_NAME" --clobber
 
-          # 5. Add to RSS Feed
           URL="https://github.com/feddedz/potify/releases/download/v1/$FILE_NAME"
           DATE=$(date -R)
           ITEM="<item><title>$TITLE</title><pubDate>$DATE</pubDate><enclosure url=\"$URL\" type=\"video/mp4\"/><guid>$YT_ID</guid></item>"
           
-          # This line puts the video right under the "EPISODES_START" tag
           sed -i "//a $ITEM" feed.xml
 
-      - name: Save feed.xml
+      - name: Save Feed
         run: |
           git config user.name "bot"
           git config user.email "bot@github.com"
           git add feed.xml
-          git commit -m "New episode: $(date)" || echo "No changes to commit"
+          git commit -m "New video added" || echo "No changes"
           git push
