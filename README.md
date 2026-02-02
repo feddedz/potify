@@ -1,1 +1,1 @@
-keyword: Kero Kero Bonito - Flamingo
+keyword: kero kero bonito flamingo
