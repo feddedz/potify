@@ -2,6 +2,7 @@
 <rss version="2.0">
   <channel>
     <title>Potify Podcast</title>
-    <description>My automated video podcast</description>
+    <description>Automated Video Podcast</description>
+    <link>https://feddedz.github.io/potify/</link>
     </channel>
 </rss>
