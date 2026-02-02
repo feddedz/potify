@@ -17,27 +17,29 @@ jobs:
 
       - name: Download & Upload
         run: |
-          # 1. Find keyword in your commit message
-          KW=$(git log -1 --pretty=%B | grep -oP 'keyword:\s*\K\w+' || echo "")
-          if [ -z "$KW" ]; then echo "No keyword found"; exit 0; fi
+          # 1. Get keyword from commit
+          KW=$(git log -1 --pretty=%B | grep -oP 'keyword:\s*\K.+' || echo "")
+          if [ -z "$KW" ]; then echo "No keyword found in commit message"; exit 0; fi
 
-          # 2. Search and Download the video (720p quality)
-          yt-dlp "ytsearch1:$KW" -f "mp4[height<=720]" --get-title --get-id > meta.txt
+          # 2. Search and get info
+          yt-dlp "ytsearch1:$KW" --get-title --get-id > meta.txt
           TITLE=$(sed -n '1p' meta.txt)
           YT_ID=$(sed -n '2p' meta.txt)
           FILE_NAME="${YT_ID}.mp4"
+
+          # 3. Download the video (720p)
           yt-dlp "https://www.youtube.com/watch?v=$YT_ID" -f "mp4[height<=720]" -o "$FILE_NAME"
 
-          # 3. Create a Release and upload the video to it
-          # This bypasses the 100MB limit!
-          gh release create "v1" --title "Episodes" --notes "Podcast storage" || echo "Release already exists"
+          # 4. Create/Update Release
+          gh release create "v1" --title "Podcast Episodes" --notes "Video Storage" || echo "Release v1 already exists"
           gh release upload "v1" "$FILE_NAME" --clobber
 
-          # 4. Add the video link to your feed.xml
-          # The URL is always the same format:
+          # 5. Add to RSS Feed
           URL="https://github.com/feddedz/potify/releases/download/v1/$FILE_NAME"
           DATE=$(date -R)
           ITEM="<item><title>$TITLE</title><pubDate>$DATE</pubDate><enclosure url=\"$URL\" type=\"video/mp4\"/><guid>$YT_ID</guid></item>"
+          
+          # This line puts the video right under the "EPISODES_START" tag
           sed -i "//a $ITEM" feed.xml
 
       - name: Save feed.xml
@@ -45,5 +47,5 @@ jobs:
           git config user.name "bot"
           git config user.email "bot@github.com"
           git add feed.xml
-          git commit -m "Added new video"
+          git commit -m "New episode: $(date)" || echo "No changes to commit"
           git push
