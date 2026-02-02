@@ -18,26 +18,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # 1. Read the first line of README.md as the search term
           KW=$(head -n 1 README.md)
-          
-          if [ -z "$KW" ]; then 
-            echo "❌ README is empty. Nothing to search."
-            exit 1 
-          fi
+          if [ -z "$KW" ]; then echo "README empty"; exit 1; fi
 
           echo "✅ Searching for: $KW"
           
-          # 2. Search YouTube
-          yt-dlp "ytsearch1:$KW" --get-title --get-id > meta.txt
+          # Use the 'web' extractor to avoid bot detection
+          yt-dlp "ytsearch1:$KW" --extractor-args "youtube:player-client=web" --get-title --get-id > meta.txt
           TITLE=$(sed -n '1p' meta.txt)
           YT_ID=$(sed -n '2p' meta.txt)
           FILE_NAME="${YT_ID}.mp4"
 
-          # 3. Download
-          yt-dlp "https://www.youtube.com/watch?v=$YT_ID" -f "mp4[height<=720]" -o "$FILE_NAME"
+          # Use a 'user-agent' to look like a real browser
+          yt-dlp "https://www.youtube.com/watch?v=$YT_ID" \
+            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            -f "mp4[height<=720]" -o "$FILE_NAME"
 
-          # 4. Release and Feed Update
           gh release create "v1" --title "Podcast Episodes" --notes "Video Storage" || echo "Release exists"
           gh release upload "v1" "$FILE_NAME" --clobber
 
