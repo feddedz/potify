@@ -23,15 +23,18 @@ jobs:
 
           echo "✅ Searching for: $KW"
           
-          # Use the 'web' extractor to avoid bot detection
-          yt-dlp "ytsearch1:$KW" --extractor-args "youtube:player-client=web" --get-title --get-id > meta.txt
+          # This line uses the 'mweb' (mobile web) client which often ignores the bot check
+          yt-dlp "ytsearch1:$KW" \
+            --extractor-args "youtube:player-client=mweb" \
+            --get-title --get-id > meta.txt
+          
           TITLE=$(sed -n '1p' meta.txt)
           YT_ID=$(sed -n '2p' meta.txt)
           FILE_NAME="${YT_ID}.mp4"
 
-          # Use a 'user-agent' to look like a real browser
+          # Use a mobile browser identity to download
           yt-dlp "https://www.youtube.com/watch?v=$YT_ID" \
-            --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+            --extractor-args "youtube:player-client=mweb" \
             -f "mp4[height<=720]" -o "$FILE_NAME"
 
           gh release create "v1" --title "Podcast Episodes" --notes "Video Storage" || echo "Release exists"
@@ -47,5 +50,5 @@ jobs:
           git config user.name "bot"
           git config user.email "bot@github.com"
           git add feed.xml
-          git commit -m "Added video for: $(head -n 1 README.md)" || echo "No changes"
+          git commit -m "Added video: $(head -n 1 README.md)" || echo "No changes"
           git push
